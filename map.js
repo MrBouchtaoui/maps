@@ -7,6 +7,12 @@ console.log("Welcome to this Map Demo");
 const generateBtn = document.querySelector('#generate');
 generateBtn.addEventListener('click',generateMarker);
 
+const moveBtn = document.querySelector('#move');
+moveBtn.addEventListener('click', startMoving);
+
+const nextBtn = document.querySelector('#next');
+nextBtn.addEventListener('click', moveNextPosition);
+
 const locations = [
     [52.032660, 4.316106],
     [52.056972, 4.196791],
@@ -16,6 +22,29 @@ const locations = [
     [52.061955, 4.314128],
 ];
 let crntIndex = 0;
+
+const positions = [
+    [52.085873, 4.343973],
+    [52.087671, 4.380350],
+    [52.074309, 4.434707],
+    [52.063000, 4.472756],
+    [52.037286, 4.509552],
+    [52.011960, 4.529729],
+    [51.979802, 4.497937],
+    [51.966451, 4.466903],
+    [51.962329, 4.453831],
+    [51.956352, 4.438973],
+];
+let crntPosition = 0;
+
+const styles = {
+    'geoMarker': new ol.style.Style({
+      image: new ol.style.Icon({
+        anchor: [0.5, 1],
+        src: 'image/airplane.png',
+      }),
+    }),
+  };
 
 
 // Adding a map object
@@ -45,16 +74,14 @@ let markersLayer = new ol.layer.Vector({
 map.addLayer(markersLayer);
 
 // Adding a marker to markersLayer
-// let marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([4.333959, 52.060110])));
-let marker = new ol.Feature({
+let flyingPlane = new ol.Feature({
     geometry: new ol.geom.Point(ol.proj.fromLonLat([4.333959, 52.060110]))
 });
-markersLayer.getSource().addFeature(marker);
+markersLayer.getSource().addFeature(flyingPlane);
 
+const movingMarker = flyingPlane.getGeometry().clone();
 
-
-
-function generateMarker() {
+function generateMarker(e) {
     if(crntIndex < locations.length) {
         const loc = [locations[crntIndex][1], locations[crntIndex][0]];
         const airplane = new ol.Feature({
@@ -66,3 +93,32 @@ function generateMarker() {
         crntIndex = 0;
     }
 }
+
+// source: https://openlayers.org/en/latest/examples/feature-move-animation.html
+function moveMarker(e) {
+    console.log("Move marker!");
+
+    // move marker to next position
+    if(crntPosition < positions.length) {
+        console.log("\tPosition: ", crntPosition);
+        const loc = [positions[crntPosition][1], positions[crntPosition][0]];
+        
+        flyingPlane.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(loc)));
+
+        crntPosition++;
+
+    } else {
+        crntPosition = 0;
+    }
+}
+
+function startMoving(e) {
+    console.log("Start moving!");
+    console.log(markersLayer);
+    // markersLayer.on('postrender', moveMarker);
+}
+
+function moveNextPosition(e) {
+    moveMarker(e);
+}
+

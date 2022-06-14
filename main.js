@@ -15,7 +15,6 @@ const locations = [
     [52.040286, 4.397286],
     [52.061955, 4.314128],
 ];
-
 let crntIndex = 0;
 
 var airplaneIcon = L.icon({
