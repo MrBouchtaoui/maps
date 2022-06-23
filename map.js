@@ -66,7 +66,7 @@ let markersLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
     style: new ol.style.Style({
         image: new ol.style.Icon({
-        anchor: [0.5, 1],
+        anchor: [0.5, 0.5],
         src: 'image/airplane.png'
         })
     })
@@ -74,12 +74,14 @@ let markersLayer = new ol.layer.Vector({
 map.addLayer(markersLayer);
 
 // Adding a marker to markersLayer
+// Gebruik Feature ipv Marker: https://gis.stackexchange.com/a/20491
 let flyingPlane = new ol.Feature({
     geometry: new ol.geom.Point(ol.proj.fromLonLat([4.333959, 52.060110]))
 });
 markersLayer.getSource().addFeature(flyingPlane);
 
-const movingMarker = flyingPlane.getGeometry().clone();
+const geoMovingMarker = flyingPlane.getGeometry().clone();
+console.log('Position flyingPlane: ', geoMovingMarker);
 
 function generateMarker(e) {
     if(crntIndex < locations.length) {
@@ -96,14 +98,17 @@ function generateMarker(e) {
 
 // source: https://openlayers.org/en/latest/examples/feature-move-animation.html
 function moveMarker(e) {
-    console.log("Move marker!");
+    console.log("Move marker: ", e);
 
     // move marker to next position
     if(crntPosition < positions.length) {
         console.log("\tPosition: ", crntPosition);
         const loc = [positions[crntPosition][1], positions[crntPosition][0]];
         
-        flyingPlane.setGeometry(new ol.geom.Point(ol.proj.fromLonLat(loc)));
+        let marker = new ol.geom.Point(ol.proj.fromLonLat(loc));
+        flyingPlane.setGeometry(marker);
+        marker.rotate(Math.PI/2, flyingPlane.getCenter());
+        // map.view().setCenter(new ol.geom.Point(ol.proj.fromLonLat(loc)));
 
         crntPosition++;
 
@@ -120,5 +125,6 @@ function startMoving(e) {
 
 function moveNextPosition(e) {
     moveMarker(e);
+    // markersLayer.un('postrender', moveMarker);
 }
 
