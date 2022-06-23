@@ -1,130 +1,187 @@
 // Map rendering with Leaflet library: https://leafletjs.com/index.html
 
-
-
 console.log("Welcome to this Map Demo");
 
-const generateBtn = document.querySelector('#generate');
-generateBtn.addEventListener('click',generateMarker);
+const generateBtn = document.querySelector("#generate");
+generateBtn.addEventListener("click", generateMarker);
 
-const moveBtn = document.querySelector('#move');
-moveBtn.addEventListener('click', startMoving);
+const moveBtn = document.querySelector("#move");
+moveBtn.addEventListener("click", startMoving);
 
-const nextBtn = document.querySelector('#next');
-nextBtn.addEventListener('click', moveNextPosition);
+const nextBtn = document.querySelector("#next");
+nextBtn.addEventListener("click", moveNextPosition);
 
 const locations = [
-    [52.032660, 4.316106],
-    [52.056972, 4.196791],
-    [52.088593, 4.283824],
-    [52.085129, 4.395876],
-    [52.040286, 4.397286],
-    [52.061955, 4.314128],
+  [52.03266, 4.316106],
+  [52.056972, 4.196791],
+  [52.088593, 4.283824],
+  [52.085129, 4.395876],
+  [52.040286, 4.397286],
+  [52.061955, 4.314128],
 ];
 let crntIndex = 0;
 
 const positions = [
-    [52.085873, 4.343973],
-    [52.087671, 4.380350],
-    [52.074309, 4.434707],
-    [52.063000, 4.472756],
-    [52.037286, 4.509552],
-    [52.011960, 4.529729],
-    [51.979802, 4.497937],
-    [51.966451, 4.466903],
-    [51.962329, 4.453831],
-    [51.956352, 4.438973],
+  [52.085873, 4.343973],
+  [52.087671, 4.38035],
+  [52.074309, 4.434707],
+  [52.063, 4.472756],
+  [52.037286, 4.509552],
+  [52.01196, 4.529729],
+  [51.979802, 4.497937],
+  [51.966451, 4.466903],
+  [51.962329, 4.453831],
+  [51.956352, 4.438973],
 ];
 let crntPosition = 0;
 
 const styles = {
-    'geoMarker': new ol.style.Style({
-      image: new ol.style.Icon({
-        anchor: [0.5, 1],
-        src: 'image/airplane.png',
-      }),
+  geoMarker: new ol.style.Style({
+    image: new ol.style.Icon({
+      anchor: [0.5, 1],
+      src: "image/airplane.png",
     }),
-  };
-
+  }),
+};
 
 // Adding a map object
 let map = new ol.Map({
-    target: 'map',
-    layers: [
-      new ol.layer.Tile({
-        source: new ol.source.OSM()
-      })
-    ],
-    view: new ol.View({
-      center: ol.proj.fromLonLat([4.333959, 52.060110]),
-      zoom: 13
-    })
-  });
+  target: "map",
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.OSM(),
+    }),
+  ],
+  view: new ol.View({
+    center: ol.proj.fromLonLat([4.333959, 52.06011]),
+    zoom: 13,
+  }),
+});
 
 // Adding a markers layer
 let markersLayer = new ol.layer.Vector({
-    source: new ol.source.Vector(),
-    style: new ol.style.Style({
-        image: new ol.style.Icon({
-        anchor: [0.5, 0.5],
-        src: 'image/airplane.png'
-        })
-    })
+  source: new ol.source.Vector(),
+  style: new ol.style.Style({
+    image: new ol.style.Icon({
+      anchor: [0.5, 0.5],
+      src: "image/airplane.png",
+    }),
+  }),
 });
 map.addLayer(markersLayer);
 
 // Adding a marker to markersLayer
 // Gebruik Feature ipv Marker: https://gis.stackexchange.com/a/20491
 let flyingPlane = new ol.Feature({
-    geometry: new ol.geom.Point(ol.proj.fromLonLat([4.333959, 52.060110]))
+  geometry: new ol.geom.Point(ol.proj.fromLonLat([4.333959, 52.06011])),
 });
 markersLayer.getSource().addFeature(flyingPlane);
 
 const geoMovingMarker = flyingPlane.getGeometry().clone();
-console.log('Position flyingPlane: ', geoMovingMarker);
+console.log("Position flyingPlane: ", geoMovingMarker);
 
 function generateMarker(e) {
-    if(crntIndex < locations.length) {
-        const loc = [locations[crntIndex][1], locations[crntIndex][0]];
-        const airplane = new ol.Feature({
-            geometry: new ol.geom.Point(ol.proj.fromLonLat(loc))
-        });
-        markersLayer.getSource().addFeature(airplane);
-        crntIndex++;
-    } else {
-        crntIndex = 0;
-    }
+  if (crntIndex < locations.length) {
+    const loc = [locations[crntIndex][1], locations[crntIndex][0]];
+    const airplane = new ol.Feature({
+      geometry: new ol.geom.Point(ol.proj.fromLonLat(loc)),
+    });
+    markersLayer.getSource().addFeature(airplane);
+    crntIndex++;
+  } else {
+    crntIndex = 0;
+  }
 }
 
 // source: https://openlayers.org/en/latest/examples/feature-move-animation.html
-function moveMarker(e) {
-    console.log("Move marker: ", e);
+function moveMarker() {
+  console.log("Move marker: ");
 
-    // move marker to next position
-    if(crntPosition < positions.length) {
-        console.log("\tPosition: ", crntPosition);
-        const loc = [positions[crntPosition][1], positions[crntPosition][0]];
-        
-        let marker = new ol.geom.Point(ol.proj.fromLonLat(loc));
-        flyingPlane.setGeometry(marker);
-        marker.rotate(Math.PI/2, flyingPlane.getCenter());
-        // map.view().setCenter(new ol.geom.Point(ol.proj.fromLonLat(loc)));
+  // move marker to next position
+  if (crntPosition < positions.length) {
+    console.log("\tPosition: ", crntPosition);
+    const loc = [positions[crntPosition][1], positions[crntPosition][0]];
 
-        crntPosition++;
+    let marker = new ol.geom.Point(ol.proj.fromLonLat(loc));
+    flyingPlane.setGeometry(marker);
+    // marker.rotate(Math.PI/2, flyingPlane.getCenter());
+    // map.view.setCenter(new ol.geom.Point(ol.proj.fromLonLat(loc)));
 
-    } else {
-        crntPosition = 0;
-    }
+    crntPosition++;
+  } else {
+    crntPosition = 0;
+  }
 }
 
 function startMoving(e) {
-    console.log("Start moving!");
-    console.log(markersLayer);
-    // markersLayer.on('postrender', moveMarker);
+  console.log("Start moving!");
+  console.log(markersLayer);
+  // markersLayer.on('postrender', moveMarker);
 }
 
 function moveNextPosition(e) {
-    moveMarker(e);
-    // markersLayer.un('postrender', moveMarker);
+  moveMarker();
+  // markersLayer.un('postrender', moveMarker);
+
+  flash(flyingPlane);
 }
 
+// Animation code
+const duration = 3000;
+function flash(feature) {
+  
+  // Pak timestamp in milliseconden
+  const start = Date.now();
+
+  // Kopieer coordinatie
+  const flashGeom = feature.getGeometry().clone();
+
+  // listener voor postrender
+  const listenerKey = markersLayer.on("postrender", animate);
+
+  // animate functie, aangeroepen door postrender event
+  function animate(event) {
+    
+    // Pak timestamp van frame-refresh
+    const frameState = event.frameState;
+
+    // Bepaal tijdsverschil met start-time
+    const elapsed = frameState.time - start;
+    if (elapsed >= duration) {
+      ol.Observable.unByKey(listenerKey);
+      return;
+    }
+
+    // Pak vector's teken pen
+    const vectorContext = ol.render.getVectorContext(event);
+
+    // Bepaal deelwaarde van elapsed en duration
+    const elapsedRatio = elapsed / duration;
+
+    // radius will be 5 at start and 30 at end.
+    const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+    
+    // Wordt met de tijd steeds transparanter
+    const opacity = ol.easing.easeOut(1 - elapsedRatio);
+
+    // Pas style aan met nieuwe waarden radius en opacity
+    const style = new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: radius,
+        stroke: new ol.style.Stroke({
+          color: "rgba(255, 0, 0, " + opacity + ")",
+          width: 0.25 + opacity,
+        }),
+      }),
+    });
+
+    // Pas nieuwe style toe
+    vectorContext.setStyle(style);
+
+    // Teken op de locatie
+    vectorContext.drawGeometry(flashGeom);
+
+    // tell OpenLayers to continue postrender animation
+    map.render();
+  }
+}
