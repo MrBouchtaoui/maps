@@ -185,3 +185,66 @@ function flash(feature) {
     map.render();
   }
 }
+
+const animTime = 2500;
+function animateMove (feature) {
+    // Pak huidige timestamp in milliseconden
+  const start = Date.now();
+
+  // Kopieer huidige coordinatie
+  const currentGeom = feature.getGeometry().clone();
+
+  // Waar moet het naar toe
+  const finalGeom =  null;
+
+  const dLat = currentGeom.co
+
+  // listener voor postrender
+  const listenerKey = markersLayer.on("postrender", animate);
+
+  // animate functie, aangeroepen door postrender event
+  function animate(event) {
+    
+    // Pak timestamp van frame-refresh
+    const frameState = event.frameState;
+
+    // Bepaal tijdsverschil met start-time
+    const elapsed = frameState.time - start;
+    if (elapsed >= duration) {
+      ol.Observable.unByKey(listenerKey);
+      return;
+    }
+
+    // Pak vector's teken pen
+    const vectorContext = ol.render.getVectorContext(event);
+
+    // Bepaal deelwaarde van elapsed en duration
+    const elapsedRatio = elapsed / duration;
+
+    // radius will be 5 at start and 30 at end.
+    const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+    
+    // Wordt met de tijd steeds transparanter
+    const opacity = ol.easing.easeOut(1 - elapsedRatio);
+
+    // Pas style aan met nieuwe waarden radius en opacity
+    const style = new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: radius,
+        stroke: new ol.style.Stroke({
+          color: "rgba(255, 0, 0, " + opacity + ")",
+          width: 0.25 + opacity,
+        }),
+      }),
+    });
+
+    // Pas nieuwe style toe
+    vectorContext.setStyle(style);
+
+    // Teken op de locatie
+    vectorContext.drawGeometry(currentGeom);
+
+    // tell OpenLayers to continue postrender animation
+    map.render();
+  }
+}
