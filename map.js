@@ -123,13 +123,13 @@ function moveNextPosition(e) {
   moveMarker();
   // markersLayer.un('postrender', moveMarker);
 
-  flash(flyingPlane);
+  // flash(flyingPlane);
+  animateMove(flyingPlane, [positions[1][1], positions[1][0]])
 }
 
 // Animation code
 const duration = 3000;
 function flash(feature) {
-  
   // Pak timestamp in milliseconden
   const start = Date.now();
 
@@ -141,7 +141,6 @@ function flash(feature) {
 
   // animate functie, aangeroepen door postrender event
   function animate(event) {
-    
     // Pak timestamp van frame-refresh
     const frameState = event.frameState;
 
@@ -160,7 +159,7 @@ function flash(feature) {
 
     // radius will be 5 at start and 30 at end.
     const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
-    
+
     // Wordt met de tijd steeds transparanter
     const opacity = ol.easing.easeOut(1 - elapsedRatio);
 
@@ -186,54 +185,94 @@ function flash(feature) {
   }
 }
 
-const animTime = 2500;
-function animateMove (feature) {
-    // Pak huidige timestamp in milliseconden
+const ANIM_TIME = 1500;
+let num_logs = 0;
+function animateMove(feature, destCoord) {
+  
+  /* We hebben een start en een eind positie en een
+       animatie tijd van 1500 ms.
+       We pakken het verschil tussen de 2 locaties:
+       dLat en dLon 
+    */
+
+  // Pak huidige timestamp in milliseconden
   const start = Date.now();
 
   // Kopieer huidige coordinatie
   const currentGeom = feature.getGeometry().clone();
+  // console.log("currentGeom: ", currentGeom);
 
   // Waar moet het naar toe
-  const finalGeom =  null;
+  let finalGeom = null;
 
-  const dLat = currentGeom.co
+  const currentLoc = currentGeom.getCoordinates();
+  console.log("currentLoc: ", currentLoc);
+
+  const destGeom = new ol.geom.Point(ol.proj.fromLonLat([destCoord[0], destCoord[1]]));
+  const destLoc = destGeom.getCoordinates();
+  console.log("destGeom: ", destLoc);
+
+  // console.log("destLat: ", destLoc[1]);
+  // console.log("crntLon", currentLoc[0], "destLon: ", destLoc[0]);
+
+  const dLat = currentLoc[1] - destLoc[1]; console.log("dLat: ", dLat);
+  const dLon = currentLoc[0] - destLoc[0]; console.log("dLon: ", dLon);
+  const stepLat = dLat/ANIM_TIME; console.log("stepLat: ", stepLat);
+  const stepLon = dLon/ANIM_TIME; console.log("stepLon: ", stepLon);
 
   // listener voor postrender
   const listenerKey = markersLayer.on("postrender", animate);
 
+  let lastTime = 0;
+
+  const newLoc = [];
+  newLoc[0] = currentLoc[0], newLoc[1] = currentLoc[1];
+
   // animate functie, aangeroepen door postrender event
   function animate(event) {
-    
-    // Pak timestamp van frame-refresh
-    const frameState = event.frameState;
+    console.log("Last time: ", lastTime);
+
+    // if(num_logs >= 20) return;
+    // else num_logs++;
+    // console.log("Num logs: ", num_logs);
+
+    // Pak tijdsverschil tussen 2 frames
+    // const elapsedTime = event.frameState.time - lastTime; console.log("Elapsed time: ", elapsedTime);
+    // lastTime = elapsedTime;
+
+    newLoc[1] += stepLat;
+    newLoc[0] += stepLon;
+    const newLat = newLoc[1]; console.log("newLat: ", newLat);
+    const newLon = newLoc[0]; console.log("newLon: ", newLon);
 
     // Bepaal tijdsverschil met start-time
-    const elapsed = frameState.time - start;
-    if (elapsed >= duration) {
+    const elapsed = event.frameState.time - start; console.log("Elapsed: ", elapsed);
+    if (newLat == destLoc[1]) {
       ol.Observable.unByKey(listenerKey);
       return;
     }
+
+    finalGeom = new ol.geom.Point([newLon, newLat]);
 
     // Pak vector's teken pen
     const vectorContext = ol.render.getVectorContext(event);
 
     // Bepaal deelwaarde van elapsed en duration
-    const elapsedRatio = elapsed / duration;
+    // const elapsedRatio = elapsed / duration;
 
     // radius will be 5 at start and 30 at end.
-    const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
-    
+    // const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+
     // Wordt met de tijd steeds transparanter
-    const opacity = ol.easing.easeOut(1 - elapsedRatio);
+    // const opacity = ol.easing.easeOut(1 - elapsedRatio);
 
     // Pas style aan met nieuwe waarden radius en opacity
     const style = new ol.style.Style({
       image: new ol.style.Circle({
-        radius: radius,
+        radius: 16,
         stroke: new ol.style.Stroke({
-          color: "rgba(255, 0, 0, " + opacity + ")",
-          width: 0.25 + opacity,
+          color: "rgba(0, 0, 0)",
+          width: 2,
         }),
       }),
     });
@@ -242,7 +281,7 @@ function animateMove (feature) {
     vectorContext.setStyle(style);
 
     // Teken op de locatie
-    vectorContext.drawGeometry(currentGeom);
+    vectorContext.drawGeometry(finalGeom);
 
     // tell OpenLayers to continue postrender animation
     map.render();
