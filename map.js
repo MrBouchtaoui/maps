@@ -215,8 +215,8 @@ function animateMove(feature, destCoord) {
   // console.log("destLat: ", destLoc[1]);
   // console.log("crntLon", currentLoc[0], "destLon: ", destLoc[0]);
 
-  const dLat = currentLoc[1] - destLoc[1]; console.log("dLat: ", dLat);
-  const dLon = currentLoc[0] - destLoc[0]; console.log("dLon: ", dLon);
+  const dLat = destLoc[1] - currentLoc[1]; console.log("dLat: ", dLat);
+  const dLon = destLoc[0] - currentLoc[0]; console.log("dLon: ", dLon);
   const stepLat = dLat/ANIM_TIME; console.log("stepLat: ", stepLat);
   const stepLon = dLon/ANIM_TIME; console.log("stepLon: ", stepLon);
 
@@ -247,7 +247,7 @@ function animateMove(feature, destCoord) {
 
     // Bepaal tijdsverschil met start-time
     const elapsed = event.frameState.time - start; console.log("Elapsed: ", elapsed);
-    if (newLat == destLoc[1]) {
+    if (newLat >= destLoc[1]) {
       ol.Observable.unByKey(listenerKey);
       return;
     }
