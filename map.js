@@ -78,6 +78,11 @@ markersLayer.getSource().addFeature(flyingPlane);
 const geoMovingMarker = flyingPlane.getGeometry().clone();
 console.log("Position flyingPlane: ", geoMovingMarker);
 
+function lerp(vStart, vEnd, t) {
+	return vStart + t * (vEnd - vStart);
+}
+
+
 function generateMarker(e) {
 	if (crntIndex < locations.length) {
 		const loc = [locations[crntIndex][1], locations[crntIndex][0]];
@@ -91,24 +96,54 @@ function generateMarker(e) {
 	}
 }
 
+function movePlaneToPos(pos) {
+	let marker = new ol.geom.Point(ol.proj.fromLonLat(pos));
+	flyingPlane.setGeometry(marker);
+}
+
+
+// Lerp the marker between the 2 points
+function lerpMarker(oldPos, newPos) {
+
+	// The progress of the move from oldPos to newPos (0.0 < progress <= 1.0)
+	let progress = 0.0;
+	let progressPerFrame = 0.005;
+
+	let intervalID = window.setInterval(() => {
+		const xOld = positions[oldPos][1];
+		const yOld = positions[oldPos][0];
+
+		const xNew = positions[newPos][1];
+		const yNew = positions[newPos][0];
+	
+		const xLerped = lerp(xOld, xNew, progress);
+		const yLerped = lerp(yOld, yNew, progress);
+
+		if (progress >= 1) {
+			window.clearInterval(intervalID);
+		}
+
+		movePlaneToPos([xLerped, yLerped])
+
+		progress += progressPerFrame;
+		
+	}, 0.1);
+}
+
 // source: https://openlayers.org/en/latest/examples/feature-move-animation.html
 function moveMarker() {
-	console.log("Move marker: ");
+	// console.log("Move marker: ");
 
-	// move marker to next position
-	if (crntPosition < positions.length) {
-		console.log("\tPosition: ", crntPosition);
-		const loc = [positions[crntPosition][1], positions[crntPosition][0]];
+	const oldPos = crntPosition;
 
-		let marker = new ol.geom.Point(ol.proj.fromLonLat(loc));
-		flyingPlane.setGeometry(marker);
-		// marker.rotate(Math.PI/2, flyingPlane.getCenter());
-		// map.view.setCenter(new ol.geom.Point(ol.proj.fromLonLat(loc)));
+	crntPosition = (crntPosition + 1) % positions.length;
 
-		crntPosition++;
-	} else {
-		crntPosition = 0;
-	}
+	lerpMarker(oldPos, crntPosition)
+	
+
+	// console.log("\tPosition: ", crntPosition);
+	// marker.rotate(Math.PI/2, flyingPlane.getCenter());
+	// map.view.setCenter(new ol.geom.Point(ol.proj.fromLonLat(loc)));
 }
 
 function startMoving(e) {
@@ -122,172 +157,172 @@ function moveNextPosition(e) {
 	// markersLayer.un('postrender', moveMarker);
 
 	// flash(flyingPlane);
-	animateMove(flyingPlane, [positions[1][1], positions[1][0]]);
+	// animateMove(flyingPlane, [positions[1][1], positions[1][0]]);
 }
 
 // Animation code
-const duration = 3000;
-function flash(feature) {
-	// Pak timestamp in milliseconden
-	const start = Date.now();
+// const duration = 3000;
+// function flash(feature) {
+// 	// Pak timestamp in milliseconden
+// 	const start = Date.now();
 
-	// Kopieer coordinatie
-	const flashGeom = feature.getGeometry().clone();
+// 	// Kopieer coordinatie
+// 	const flashGeom = feature.getGeometry().clone();
 
-	// listener voor postrender
-	const listenerKey = markersLayer.on("postrender", animate);
+// 	// listener voor postrender
+// 	const listenerKey = markersLayer.on("postrender", animate);
 
-	// animate functie, aangeroepen door postrender event
-	function animate(event) {
-		// Pak timestamp van frame-refresh
-		const frameState = event.frameState;
+// 	// animate functie, aangeroepen door postrender event
+// 	function animate(event) {
+// 		// Pak timestamp van frame-refresh
+// 		const frameState = event.frameState;
 
-		// Bepaal tijdsverschil met start-time
-		const elapsed = frameState.time - start;
-		if (elapsed >= duration) {
-			ol.Observable.unByKey(listenerKey);
-			return;
-		}
+// 		// Bepaal tijdsverschil met start-time
+// 		const elapsed = frameState.time - start;
+// 		if (elapsed >= duration) {
+// 			ol.Observable.unByKey(listenerKey);
+// 			return;
+// 		}
 
-		// Pak vector's teken pen
-		const vectorContext = ol.render.getVectorContext(event);
+// 		// Pak vector's teken pen
+// 		const vectorContext = ol.render.getVectorContext(event);
 
-		// Bepaal deelwaarde van elapsed en duration
-		const elapsedRatio = elapsed / duration;
+// 		// Bepaal deelwaarde van elapsed en duration
+// 		const elapsedRatio = elapsed / duration;
 
-		// radius will be 5 at start and 30 at end.
-		const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+// 		// radius will be 5 at start and 30 at end.
+// 		const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
 
-		// Wordt met de tijd steeds transparanter
-		const opacity = ol.easing.easeOut(1 - elapsedRatio);
+// 		// Wordt met de tijd steeds transparanter
+// 		const opacity = ol.easing.easeOut(1 - elapsedRatio);
 
-		// Pas style aan met nieuwe waarden radius en opacity
-		const style = new ol.style.Style({
-			image: new ol.style.Circle({
-				radius: radius,
-				stroke: new ol.style.Stroke({
-					color: "rgba(255, 0, 0, " + opacity + ")",
-					width: 0.25 + opacity,
-				}),
-			}),
-		});
+// 		// Pas style aan met nieuwe waarden radius en opacity
+// 		const style = new ol.style.Style({
+// 			image: new ol.style.Circle({
+// 				radius: radius,
+// 				stroke: new ol.style.Stroke({
+// 					color: "rgba(255, 0, 0, " + opacity + ")",
+// 					width: 0.25 + opacity,
+// 				}),
+// 			}),
+// 		});
 
-		// Pas nieuwe style toe
-		vectorContext.setStyle(style);
+// 		// Pas nieuwe style toe
+// 		vectorContext.setStyle(style);
 
-		// Teken op de locatie
-		vectorContext.drawGeometry(flashGeom);
+// 		// Teken op de locatie
+// 		vectorContext.drawGeometry(flashGeom);
 
-		// tell OpenLayers to continue postrender animation
-		map.render();
-	}
-}
+// 		// tell OpenLayers to continue postrender animation
+// 		map.render();
+// 	}
+// }
 
-const ANIM_TIME = 1500;
-let num_logs = 0;
-function animateMove(feature, destCoord) {
-	/* We hebben een start en een eind positie en een
-       animatie tijd van 1500 ms.
-       We pakken het verschil tussen de 2 locaties:
-       dLat en dLon 
-    */
+// const ANIM_TIME = 1500;
+// let num_logs = 0;
+// function animateMove(feature, destCoord) {
+// 	/* We hebben een start en een eind positie en een
+//        animatie tijd van 1500 ms.
+//        We pakken het verschil tussen de 2 locaties:
+//        dLat en dLon 
+//     */
 
-	// Pak huidige timestamp in milliseconden
-	const start = Date.now();
+// 	// Pak huidige timestamp in milliseconden
+// 	const start = Date.now();
 
-	// Kopieer huidige coordinatie
-	const currentGeom = feature.getGeometry().clone();
-	// console.log("currentGeom: ", currentGeom);
+// 	// Kopieer huidige coordinatie
+// 	const currentGeom = feature.getGeometry().clone();
+// 	// console.log("currentGeom: ", currentGeom);
 
-	// Waar moet het naar toe
-	let finalGeom = null;
+// 	// Waar moet het naar toe
+// 	let finalGeom = null;
 
-	const currentLoc = currentGeom.getCoordinates();
-	console.log("currentLoc: ", currentLoc);
+// 	const currentLoc = currentGeom.getCoordinates();
+// 	console.log("currentLoc: ", currentLoc);
 
-	const destGeom = new ol.geom.Point(ol.proj.fromLonLat([destCoord[0], destCoord[1]]));
-	const destLoc = destGeom.getCoordinates();
-	console.log("destGeom: ", destLoc);
+// 	const destGeom = new ol.geom.Point(ol.proj.fromLonLat([destCoord[0], destCoord[1]]));
+// 	const destLoc = destGeom.getCoordinates();
+// 	console.log("destGeom: ", destLoc);
 
-	// console.log("destLat: ", destLoc[1]);
-	// console.log("crntLon", currentLoc[0], "destLon: ", destLoc[0]);
+// 	// console.log("destLat: ", destLoc[1]);
+// 	// console.log("crntLon", currentLoc[0], "destLon: ", destLoc[0]);
 
-	const dLat = destLoc[1] - currentLoc[1];
-	console.log("dLat: ", dLat);
-	const dLon = destLoc[0] - currentLoc[0];
-	console.log("dLon: ", dLon);
-	const stepLat = dLat / ANIM_TIME;
-	console.log("stepLat: ", stepLat);
-	const stepLon = dLon / ANIM_TIME;
-	console.log("stepLon: ", stepLon);
+// 	const dLat = destLoc[1] - currentLoc[1];
+// 	console.log("dLat: ", dLat);
+// 	const dLon = destLoc[0] - currentLoc[0];
+// 	console.log("dLon: ", dLon);
+// 	const stepLat = dLat / ANIM_TIME;
+// 	console.log("stepLat: ", stepLat);
+// 	const stepLon = dLon / ANIM_TIME;
+// 	console.log("stepLon: ", stepLon);
 
-	// listener voor postrender
-	const listenerKey = markersLayer.on("postrender", animate);
+// 	// listener voor postrender
+// 	const listenerKey = markersLayer.on("postrender", animate);
 
-	let lastTime = 0;
+// 	let lastTime = 0;
 
-	const newLoc = [];
-	(newLoc[0] = currentLoc[0]), (newLoc[1] = currentLoc[1]);
+// 	const newLoc = [];
+// 	(newLoc[0] = currentLoc[0]), (newLoc[1] = currentLoc[1]);
 
-	// animate functie, aangeroepen door postrender event
-	function animate(event) {
-		console.log("Last time: ", lastTime);
+// 	// animate functie, aangeroepen door postrender event
+// 	function animate(event) {
+// 		console.log("Last time: ", lastTime);
 
-		// if(num_logs >= 20) return;
-		// else num_logs++;
-		// console.log("Num logs: ", num_logs);
+// 		// if(num_logs >= 20) return;
+// 		// else num_logs++;
+// 		// console.log("Num logs: ", num_logs);
 
-		// Pak tijdsverschil tussen 2 frames
-		// const elapsedTime = event.frameState.time - lastTime; console.log("Elapsed time: ", elapsedTime);
-		// lastTime = elapsedTime;
+// 		// Pak tijdsverschil tussen 2 frames
+// 		// const elapsedTime = event.frameState.time - lastTime; console.log("Elapsed time: ", elapsedTime);
+// 		// lastTime = elapsedTime;
 
-		newLoc[1] += stepLat;
-		newLoc[0] += stepLon;
-		const newLat = newLoc[1];
-		console.log("newLat: ", newLat);
-		const newLon = newLoc[0];
-		console.log("newLon: ", newLon);
+// 		newLoc[1] += stepLat;
+// 		newLoc[0] += stepLon;
+// 		const newLat = newLoc[1];
+// 		console.log("newLat: ", newLat);
+// 		const newLon = newLoc[0];
+// 		console.log("newLon: ", newLon);
 
-		// Bepaal tijdsverschil met start-time
-		const elapsed = event.frameState.time - start;
-		console.log("Elapsed: ", elapsed);
-		if (newLat >= destLoc[1]) {
-			ol.Observable.unByKey(listenerKey);
-			return;
-		}
+// 		// Bepaal tijdsverschil met start-time
+// 		const elapsed = event.frameState.time - start;
+// 		console.log("Elapsed: ", elapsed);
+// 		if (newLat >= destLoc[1]) {
+// 			ol.Observable.unByKey(listenerKey);
+// 			return;
+// 		}
 
-		finalGeom = new ol.geom.Point([newLon, newLat]);
+// 		finalGeom = new ol.geom.Point([newLon, newLat]);
 
-		// Pak vector's teken pen
-		const vectorContext = ol.render.getVectorContext(event);
+// 		// Pak vector's teken pen
+// 		const vectorContext = ol.render.getVectorContext(event);
 
-		// Bepaal deelwaarde van elapsed en duration
-		// const elapsedRatio = elapsed / duration;
+// 		// Bepaal deelwaarde van elapsed en duration
+// 		// const elapsedRatio = elapsed / duration;
 
-		// radius will be 5 at start and 30 at end.
-		// const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
+// 		// radius will be 5 at start and 30 at end.
+// 		// const radius = ol.easing.easeOut(elapsedRatio) * 25 + 5;
 
-		// Wordt met de tijd steeds transparanter
-		// const opacity = ol.easing.easeOut(1 - elapsedRatio);
+// 		// Wordt met de tijd steeds transparanter
+// 		// const opacity = ol.easing.easeOut(1 - elapsedRatio);
 
-		// Pas style aan met nieuwe waarden radius en opacity
-		const style = new ol.style.Style({
-			image: new ol.style.Circle({
-				radius: 16,
-				stroke: new ol.style.Stroke({
-					color: "rgba(0, 0, 0)",
-					width: 2,
-				}),
-			}),
-		});
+// 		// Pas style aan met nieuwe waarden radius en opacity
+// 		const style = new ol.style.Style({
+// 			image: new ol.style.Circle({
+// 				radius: 16,
+// 				stroke: new ol.style.Stroke({
+// 					color: "rgba(0, 0, 0)",
+// 					width: 2,
+// 				}),
+// 			}),
+// 		});
 
-		// Pas nieuwe style toe
-		vectorContext.setStyle(style);
+// 		// Pas nieuwe style toe
+// 		// vectorContext.setStyle(style);
 
-		// Teken op de locatie
-		vectorContext.drawGeometry(finalGeom);
+// 		// Teken op de locatie
+// 		vectorContext.drawGeometry(finalGeom);
 
-		// tell OpenLayers to continue postrender animation
-		map.render();
-	}
-}
+// 		// tell OpenLayers to continue postrender animation
+// 		map.render();
+// 	}
+// }
